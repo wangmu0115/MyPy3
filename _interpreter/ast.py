@@ -29,7 +29,7 @@ class Program:
         self.statements = list(statements)
 
 
-class Identifier:
+class Identifier(Expression):
     def __init__(self, value: str):
         self.token = Token(TokenType.IDENTIFIER, value)
         self.value = value

@@ -13,4 +13,3 @@ if __name__ == "__main__":
     print("-" * 50)
 
     s = "*="
-    print(_read_op(s, 1))
