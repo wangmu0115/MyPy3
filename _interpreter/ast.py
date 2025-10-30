@@ -28,6 +28,9 @@ class Program:
     def __init__(self, *statements: Iterator[Statement]):
         self.statements = list(statements)
 
+    def append(self, stmt: Statement):
+        self.statements.append(stmt)
+
 
 class Identifier(Expression):
     def __init__(self, value: str):
@@ -44,3 +47,6 @@ class LetStatement:
         self.token = Token(TokenType.LET)
         self.name = Identifier(name)
         self.value = value
+
+    def __repr__(self):
+        return f"{self.name.value} = {self.value!r}"
