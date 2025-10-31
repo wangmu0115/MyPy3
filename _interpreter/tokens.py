@@ -51,9 +51,6 @@ class Token:
         self.__type = type
         self.__literal = literal or type.value
 
-    def __repr__(self):
-        return f"Token(type={self.type!r}, literal={self.literal!r})"
-
     @property
     def type(self):
         return self.__type
@@ -61,3 +58,6 @@ class Token:
     @property
     def literal(self):
         return self.__literal
+
+    def __repr__(self):
+        return f"Token(type={self.type!r}, literal={self.literal!r})"

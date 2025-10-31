@@ -1,6 +1,6 @@
 from typing import Iterator, Optional
 
-from _interpreter.ast import LetStatement, Program, Statement
+from _interpreter.ast import LetStatement, Program
 from _interpreter.tokens import Token, TokenType
 
 
