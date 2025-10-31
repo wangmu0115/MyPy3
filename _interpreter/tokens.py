@@ -48,11 +48,16 @@ class Token:
     """词法单元"""
 
     def __init__(self, type: TokenType, literal: Optional[str] = None):
-        self._type = type
-        self._literal = literal or type.value
+        self.__type = type
+        self.__literal = literal or type.value
 
     def __repr__(self):
-        return f"Token(type={self._type!r}, literal={self._literal!r})"
+        return f"Token(type={self.type!r}, literal={self.literal!r})"
 
-    def is_end(self):
-        return self._type == TokenType.EOF
+    @property
+    def type(self):
+        return self.__type
+
+    @property
+    def literal(self):
+        return self.__literal
