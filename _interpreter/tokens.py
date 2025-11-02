@@ -42,6 +42,7 @@ class TokenType(StrEnum):
 
     FUNCTION = "fn"  # 关键字
     LET = "let"
+    RETURN = "return"
 
 
 class Token:

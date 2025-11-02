@@ -4,18 +4,21 @@ from _import_utils import import_attr
 
 if TYPE_CHECKING:
     from lexer import Lexer
+    from parser import Parser
     from tokens import Token, TokenType
 
 __all__ = [
     "Token",
     "TokenType",
     "Lexer",
+    "Parser",
 ]
 
 _dynamic_imports = {
     "Token": "tokens",
     "TokenType": "tokens",
     "Lexer": "lexer",
+    "Parser": "parser",
 }
 
 

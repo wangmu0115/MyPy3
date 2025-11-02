@@ -33,6 +33,9 @@ class Program:
     def append(self, statement: Statement):
         self.statements.append(statement)
 
+    def __str__(self):
+        return "\n".join(str(stmt) for stmt in self.statements)
+
 
 class Identifier(Expression):
     """标识符，在let语句的等号左边不会产生值，在右边会产生值"""
@@ -53,8 +56,8 @@ class Identifier(Expression):
         return self.name
 
 
-class LetStatement:
-    """let语句: let <标识符> = <表达式>;"""
+class LetStatement(Statement):
+    """let 语句: `let <标识符> = <表达式>;`"""
 
     def __init__(self, name: str, value: Type[Expression]):
         self.__iden = Identifier(name)
@@ -76,8 +79,38 @@ class LetStatement:
         return f"LetStatement(identifier={self.iden!r}, value={self.value!r})"
 
     def __str__(self):
-        return f"{self.name} = {self.value}"
+        return f"let {self.name} = {self.value};"
+
+
+class ReturnStatement(Statement):
+    """return 语句: `return <表达式>;`"""
+
+    def __init__(self, value: Type[Expression]):
+        self.__value = value
+
+    @property
+    def value(self):
+        return self.__value
+
+    def __repr__(self):
+        return f"ReturnStatement(value={self.value!r})"
+
+    def __str__(self):
+        return f"return {self.value};"
 
 
 class ExpressionStatement(Statement):
     """表达式语句，example: x+10;"""
+
+    def __init__(self, expression: Type[Expression]):
+        self.__expression = expression
+
+    @property
+    def expression(self):
+        return self.__expression
+
+    def __repr__(self):
+        return f"ExpressionStatement(expression={self.expression!r})"
+
+    def __str__(self):
+        return f"{self.expression}"
