@@ -1,5 +1,6 @@
 from _interpreter.lexer import Lexer
 from _interpreter.parser import Parser
+from _interpreter.tokens import Token, TokenType
 
 
 def show_parsed_program(input: str):
@@ -24,4 +25,7 @@ if __name__ == "__main__":
     # """
     #     show_parsed_program(input2)
 
-    show_parsed_program("foobar;")
+    # show_parsed_program("foobar;")
+
+    # print(parse_integer_literal(Token(TokenType.INTEGER, "0x12b")))
+    show_parsed_program("-5;")

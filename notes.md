@@ -42,3 +42,19 @@ Top Down Operator Precedence
 let x = 5; // let语句
 x + 10; // 表达式语句
 
+
+
+
+
+表达式：
+
+1. 标识符表达式
+    
+    let x = foobar;
+    foobar;
+
+2. 整数字面量表达式
+
+    let x = 42;
+    42;
+

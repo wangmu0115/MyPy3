@@ -1,7 +1,20 @@
 from typing import Callable, Iterator, Optional, Type
 
-from _interpreter.ast import Expression, ExpressionStatement, Identifier, LetStatement, Program, ReturnStatement, Statement
+from _interpreter.ast import (
+    Expression,
+    ExpressionStatement,
+    Identifier,
+    IntegerLiteral,
+    LetStatement,
+    PrefixOpExpression,
+    Program,
+    ReturnStatement,
+    Statement,
+)
 from _interpreter.tokens import Token, TokenType
+
+
+class TokenLiteralError(Exception): ...
 
 
 class TokenError(Exception):
@@ -78,15 +91,38 @@ def __parse_expression(curr_token: Token, it: Iterator[Token]):
     if prefix is None:
         return None
     else:
-        return prefix(curr_token)
+        return prefix(curr_token, it)
 
 
 def __prefix_parse_fn(token_type: TokenType) -> Optional[Callable]:
     match token_type:
         case TokenType.IDENTIFIER:
-            return lambda tok: Identifier(tok.literal)
+            return lambda tok, *args: Identifier(tok.literal)
+        case TokenType.INTEGER:
+            return __parse_integer_literal
+        case TokenType.SUB | TokenType.NOT:  # 前缀运算符: `-`, `!`
+            return __parse_prefix_expression
         case _:
             return None
+
+
+def __parse_integer_literal(token: Token, *args) -> IntegerLiteral:
+    try:
+        if token.literal.startswith("0x") or token.literal.startswith("0X"):
+            base = 16
+        elif token.literal.startswith("0"):
+            base = 8
+        else:
+            base = 10
+        return IntegerLiteral(int(token.literal, base))
+    except ValueError as err:
+        raise TokenLiteralError(str(err))
+
+
+def __parse_prefix_expression(op_token: Token, it: Iterator[Token]):
+    expr = __parse_expression(next(it), it)
+
+    return PrefixOpExpression(op_token, expr)
 
 
 def __check_token_type(token: Optional[Token], token_type: TokenType) -> bool:  # 判断词法单元的类型

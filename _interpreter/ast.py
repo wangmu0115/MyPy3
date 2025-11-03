@@ -56,6 +56,63 @@ class Identifier(Expression):
         return self.name
 
 
+class IntegerLiteral(Expression):
+    """整型字面量表达式"""
+
+    def __init__(self, value: int):
+        self.__value = value
+
+    @property
+    def value(self) -> int:
+        return self.__value
+
+    def __repr__(self):
+        return f"IntegerLiteral(value={self.value!r})"
+
+    def __str__(self):
+        return str(self.value)
+
+
+class UnaryOpExpression(Expression):
+    """一元运算符表达式"""
+
+    def __init__(self, operator: Token, right: Type[Expression]):
+        self.__operator = operator
+        self.__right = right
+
+    @property
+    def operator(self) -> Token:
+        return self.__operator
+
+    @property
+    def right(self) -> Type[Expression]:
+        return self.__right
+
+
+class InfixOpExpression(Expression):
+    """中缀运算符表达式"""
+
+    def __init__(self, operator: Token, left: Type[Expression], right: Type[Expression]):
+        self.__operator = operator
+        self.__left = left
+        self.__right = right
+
+    @property
+    def operator(self) -> Token:
+        return self.__operator
+
+    @property
+    def left(self) -> Type[Expression]:
+        return self.__left
+
+    @property
+    def right(self) -> Type[Expression]:
+        return self.__right
+
+    def __str__(self):
+        return f"{self.left} {self.operator.literal} {self.right}"
+
+
 class LetStatement(Statement):
     """let 语句: `let <标识符> = <表达式>;`"""
 
