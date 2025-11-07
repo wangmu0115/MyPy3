@@ -33,16 +33,21 @@ class TokenType(StrEnum):
     NEQ = "!="
 
     COMMA = ","
-    SEMICOLON = ";"
+    SEMICOLON = ";"  # 语句结束 token
 
     LPAREN = "("
     RPAREN = ")"
     LBRACE = "{"
     RBRACE = "}"
 
+    TRUE = "true"  # Boolean
+    FALSE = "false"
+
     FUNCTION = "fn"  # 关键字
     LET = "let"
     RETURN = "return"
+    IF = "if"
+    ELSE = "else"
 
 
 class Token:
@@ -62,3 +67,9 @@ class Token:
 
     def __repr__(self):
         return f"Token(type={self.type!r}, literal={self.literal!r})"
+
+    def __str__(self):
+        if self.type.value == self.literal:
+            return self.literal
+        else:
+            return f"{self.type}::{self.literal}"

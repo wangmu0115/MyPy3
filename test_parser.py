@@ -1,14 +1,17 @@
+from _interpreter.ast import BlockStatement
 from _interpreter.lexer import Lexer
 from _interpreter.parser import Parser
-from _interpreter.tokens import Token, TokenType
 
 
-def show_parsed_program(input: str):
+def show_parsed_program(input: str, debug: bool = True):
     parser = Parser(Lexer(input))
-    for stmt in parser.parse().statements:
-        print(stmt)
-        print(f"{stmt!r}")
-    print(parser.parse())
+    # for stmt in parser.parse().statements:
+    #     print(stmt)
+    #     print(f"{stmt!r}")
+    p = parser.parse(debug)
+    print(BlockStatement(p.statements))
+    print(p)
+    print(f"{p!r}")
 
 
 if __name__ == "__main__":
@@ -28,4 +31,19 @@ if __name__ == "__main__":
     # show_parsed_program("foobar;")
 
     # print(parse_integer_literal(Token(TokenType.INTEGER, "0x12b")))
-    show_parsed_program("-5;")
+    input = """
+    let x = 12;
+    let y = if(x > 18){let z = 12;return x;}else{return y;};
+    if (z == 12){
+      foo;
+      let bar = 14;
+    }else{12;22;a+b;};
+{}
+"""
+    # parser = Parser(Lexer(input))
+    # program = parser.parse()
+    # print(BlockStatement(*program.statements))
+    # print(BlockStatement())
+    # print("\n  ".join([str(stmt) for stmt in program.statements]))
+
+    show_parsed_program(input)

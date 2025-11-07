@@ -1,76 +1,74 @@
-from typing import Iterator, Type
+from __future__ import annotations
 
-from _interpreter import Token, TokenType
+from typing import Generic, Iterator, Optional, Type, TypeVar
 
-
-class Node:
-    """抽象语法树的节点类，节点类型为表达式或语句"""
-
-    def __repr__(self):
-        return "Node()"
+from _interpreter import Token
 
 
-class Statement(Node):
-    """抽象语法树中的语句节点"""
-
-    def __repr__(self):
-        return "Statement()"
+class Node: ...  # AST 节点，分为语句和表达式
 
 
-class Expression(Node):
-    """抽象语法树中的表达式节点"""
+class Statement(Node): ...  # 语句
 
-    def __repr__(self):
-        return "Expression()"
+
+class Expression(Node): ...  # 表达式节
 
 
 class Program:
-    """每个有效的程序都由一系列的语句构成"""
+    """程序由一系列的语句构成"""
 
-    def __init__(self, *statements: Iterator[Statement]):
+    def __init__(self, *statements: Iterator[Type[Statement]]):
         self.statements = list(statements)
 
-    def append(self, statement: Statement):
+    def append(self, statement: Type[Statement]):
         self.statements.append(statement)
+
+    def __repr__(self):
+        return "\n".join(repr(stmt) for stmt in self.statements)
 
     def __str__(self):
         return "\n".join(str(stmt) for stmt in self.statements)
 
 
-class Identifier(Expression):
-    """标识符，在let语句的等号左边不会产生值，在右边会产生值"""
+class IdenExpression(Expression):
+    """标识符表达式"""
 
-    def __init__(self, name: str):
-        if not name:
-            raise ValueError("标识符名称不能为空")
-        self.__token = Token(TokenType.IDENTIFIER, name)
+    def __init__(self, iden: str):
+        self.__iden = iden
 
     @property
-    def name(self):
-        return self.__token.literal
+    def iden(self):
+        return self.__iden
 
     def __repr__(self):
-        return f"Identifier(token={self.__token!r})"
+        return f"IdenExpression(iden={self.iden!r})"
 
     def __str__(self):
-        return self.name
+        return self.iden
 
 
-class IntegerLiteral(Expression):
-    """整型字面量表达式"""
+LiteralType = TypeVar("T")
 
-    def __init__(self, value: int):
-        self.__value = value
+
+class LiteralExpression(Expression, Generic[LiteralType]):
+    def __init__(self, literal: LiteralType):
+        self.__literal = literal
 
     @property
-    def value(self) -> int:
-        return self.__value
+    def literal(self) -> LiteralType:
+        return self.__literal
 
     def __repr__(self):
-        return f"IntegerLiteral(value={self.value!r})"
+        return f"LiteralExpression(literal={self.literal!r}, type={type(self.literal)})"
 
     def __str__(self):
-        return str(self.value)
+        return str(self.literal)
+
+
+class BoolLiteralExpression(LiteralExpression[bool]): ...
+
+
+class IntLiteralExpression(LiteralExpression[int]): ...
 
 
 class UnaryOpExpression(Expression):
@@ -88,9 +86,15 @@ class UnaryOpExpression(Expression):
     def right(self) -> Type[Expression]:
         return self.__right
 
+    def __repr__(self):
+        return f"UnaryOpExpression(operator={self.operator!r}, right={self.right!r})"
 
-class InfixOpExpression(Expression):
-    """中缀运算符表达式"""
+    def __str__(self):
+        return f"({self.operator.literal}{str(self.right)})"
+
+
+class BinaryOpExpression(Expression):
+    """二元运算符表达式，使用中缀表达式表示"""
 
     def __init__(self, operator: Token, left: Type[Expression], right: Type[Expression]):
         self.__operator = operator
@@ -109,34 +113,65 @@ class InfixOpExpression(Expression):
     def right(self) -> Type[Expression]:
         return self.__right
 
+    def __repr__(self):
+        return f"BinaryOpExpression(operator={self.operator!r}, left={self.left!r}, right={self.right!r})"
+
     def __str__(self):
-        return f"{self.left} {self.operator.literal} {self.right}"
+        return f"({str(self.left)} {self.operator.literal} {str(self.right)})"
+
+
+class IfExpression(Expression):
+    def __init__(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement] = None):
+        self.__condition = condition
+        self.__consequence = consequence
+        self.__alternative = alternative
+
+    @property
+    def condition(self) -> Type[Expression]:
+        return self.__condition
+
+    @property
+    def consequence(self) -> BlockStatement:
+        return self.__consequence
+
+    @property
+    def alternative(self) -> BlockStatement:
+        return self.__alternative
+
+    def __repr__(self):
+        return f"IfExpression(condition={self.condition!r}, consequence={self.consequence!r}, alternative={self.alternative!r})"
+
+    def __str__(self):
+        expr_str = f"if{self.condition}{self.consequence}"
+        if self.alternative is not None:
+            expr_str += f"else{self.alternative}"
+        return expr_str
 
 
 class LetStatement(Statement):
     """let 语句: `let <标识符> = <表达式>;`"""
 
-    def __init__(self, name: str, value: Type[Expression]):
-        self.__iden = Identifier(name)
+    def __init__(self, iden: str, value: Type[Expression]):
+        self.__iden_expr = IdenExpression(iden)
         self.__value = value
 
     @property
-    def iden(self) -> Identifier:
-        return self.__iden
+    def iden_expr(self) -> IdenExpression:
+        return self.__iden_expr
 
     @property
-    def name(self) -> str:
-        return self.iden.name
+    def iden(self) -> str:
+        return self.iden_expr.iden
 
     @property
     def value(self) -> Type[Expression]:
         return self.__value
 
     def __repr__(self):
-        return f"LetStatement(identifier={self.iden!r}, value={self.value!r})"
+        return f"LetStatement(iden={self.iden_expr!r}, value={self.value!r})"
 
     def __str__(self):
-        return f"let {self.name} = {self.value};"
+        return f"let {self.iden} = {self.value};"
 
 
 class ReturnStatement(Statement):
@@ -156,7 +191,7 @@ class ReturnStatement(Statement):
         return f"return {self.value};"
 
 
-class ExpressionStatement(Statement):
+class ExprStatement(Statement):
     """表达式语句，example: x+10;"""
 
     def __init__(self, expression: Type[Expression]):
@@ -170,4 +205,28 @@ class ExpressionStatement(Statement):
         return f"ExpressionStatement(expression={self.expression!r})"
 
     def __str__(self):
-        return f"{self.expression}"
+        return f"{self.expression};"
+
+
+class BlockStatement(Statement):
+    """块语句: {...}"""
+
+    def __init__(self, *statements: Iterator[Type[Statement]]):
+        self.__statements = list(statements)
+
+    def append(self, statement: Type[Statement]):
+        self.__statements.append(statement)
+
+    def __len__(self):
+        return len(self.__statements)
+
+    def __repr__(self):
+        return f"BlockStatment(statements={self.__statements!r})"
+
+    def __str__(self):
+        if len(self.__statements) == 0:
+            return "{ }"
+        elif len(self.__statements) == 1:
+            return "{ " + str(self.__statements[0]) + " }"
+        else:
+            return "{\n  " + "\n  ".join(str(stmt) for stmt in self.__statements) + "\n}"
