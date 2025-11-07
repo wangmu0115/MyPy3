@@ -32,13 +32,7 @@ if __name__ == "__main__":
 
     # print(parse_integer_literal(Token(TokenType.INTEGER, "0x12b")))
     input = """
-    let x = 12;
-    let y = if(x > 18){let z = 12;return x;}else{return y;};
-    if (z == 12){
-      foo;
-      let bar = 14;
-    }else{12;22;a+b;};
-{}
+    let x = fn(){foo; bar; return a + b;};
 """
     # parser = Parser(Lexer(input))
     # program = parser.parse()

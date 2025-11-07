@@ -148,6 +148,33 @@ class IfExpression(Expression):
         return expr_str
 
 
+class FuncExpression(Expression):
+    """函数表达式: fn <参数列表> <块语句>"""
+
+    def __init__(self, parameters: list[IdenExpression], body: BlockStatement):
+        self.__parameters = list(parameters)
+        self.__body = body
+
+    @property
+    def params(self) -> list[IdenExpression]:
+        return self.paramters
+
+    @property
+    def paramters(self) -> list[IdenExpression]:
+        return self.__parameters
+
+    @property
+    def body(self) -> BlockStatement:
+        return self.__body
+
+    def __repr__(self):
+        return f"FuncExpression(parameters={self.paramters!r}, body={self.body!r})"
+
+    def __str__(self):
+        params = ",".join(str(p) for p in self.params)
+        return f"fn({params}){self.body}"
+
+
 class LetStatement(Statement):
     """let 语句: `let <标识符> = <表达式>;`"""
 

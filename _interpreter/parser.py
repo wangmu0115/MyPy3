@@ -8,6 +8,7 @@ from _interpreter.ast import (
     BoolLiteralExpression,
     Expression,
     ExprStatement,
+    FuncExpression,
     IdenExpression,
     IfExpression,
     IntLiteralExpression,
@@ -265,6 +266,29 @@ class Parser:
             return IfExpression(cond_expr, conseq_stmt, self.__parse_block_statement(it))
         return IfExpression(cond_expr, conseq_stmt)
 
+    def __parse_func_expression(self, it: Iterator[Token], *args) -> FuncExpression:  # fn(<参数列表>) {函数体}
+        self.__next_token(it)  # 将 curr_token 移动到参数列表处
+        params = self.__parse_func_params(it)
+        self.__next_token(it)  # 将 curr_token 移动到函数体处
+        body = self.__parse_block_statement(it)
+        return FuncExpression(params, body)
+
+    def __parse_func_params(self, it: Iterator[Token]) -> list[IdenExpression]:  # (<参数列表>)
+        if self.curr_token is None or self.curr_token.type != TokenType.LPAREN:
+            raise TokenError("Function parameters must begin with left parenthesis `(`.")
+        parameters = []  # 参数列表
+        self.__next_token(it)
+        while self.curr_token is not None and self.curr_token.type == TokenType.IDENTIFIER:
+            parameters.append(self.__parse_iden_expression())  # 解析 curr_token 为参数
+            self.__next_token(it)  # 移动到下一个 token
+            if self.curr_token is not None and self.curr_token.type == TokenType.COMMA:  # 继续解析下一个参数
+                self.__next_token(it)
+
+        if self.curr_token is None or self.curr_token.type != TokenType.RPAREN:
+            raise TokenError("Function parameters must begin with right parenthesis `)`.")
+
+        return parameters
+
     def __prepare_parse(self) -> Iterator[Token]:
         it = iter(self.__lexer)
         self.curr_token = next(it, None)
@@ -290,6 +314,8 @@ class Parser:
                 return self.__parse_grouped_expression
             case TokenType.IF:
                 return self.__parse_if_expression
+            case TokenType.FUNCTION:
+                return self.__parse_func_expression
             case _:
                 return None
 
