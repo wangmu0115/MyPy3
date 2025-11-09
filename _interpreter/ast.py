@@ -17,8 +17,8 @@ class Expression(Node): ...  # 表达式节
 class Program:
     """程序由一系列的语句构成"""
 
-    def __init__(self, *statements: Iterator[Type[Statement]]):
-        self.statements = list(statements)
+    def __init__(self, statements: Optional[list[Type[Statement]]] = None):
+        self.statements = statements or []
 
     def append(self, statement: Type[Statement]):
         self.statements.append(statement)
@@ -121,7 +121,9 @@ class BinaryOpExpression(Expression):
 
 
 class IfExpression(Expression):
-    def __init__(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement] = None):
+    def __init__(
+        self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement] = None
+    ):
         self.__condition = condition
         self.__consequence = consequence
         self.__alternative = alternative
@@ -171,8 +173,32 @@ class FuncExpression(Expression):
         return f"FuncExpression(parameters={self.paramters!r}, body={self.body!r})"
 
     def __str__(self):
-        params = ",".join(str(p) for p in self.params)
+        params = ", ".join(str(p) for p in self.params)
         return f"fn({params}){self.body}"
+
+
+class CallExpression(Expression):
+    def __init__(self, callable: Expression, arguments: list[Expression]):
+        self.__callable = callable
+        self.__arguments = arguments
+
+    @property
+    def callable(self):
+        return self.__callable
+
+    @property
+    def args(self):
+        return self.arguments
+
+    @property
+    def arguments(self):
+        return self.__arguments
+
+    def __repr__(self):
+        return f"CallExpression(callable={self.callable!r}, arguments={self.arguments!r})"
+
+    def __str__(self):
+        return f"{self.callable}({', '.join(str(arg) for arg in self.arguments)})"
 
 
 class LetStatement(Statement):

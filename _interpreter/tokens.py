@@ -40,8 +40,8 @@ class TokenType(StrEnum):
     LBRACE = "{"
     RBRACE = "}"
 
-    TRUE = "true"  # Boolean
-    FALSE = "false"
+    TRUE = "True"  # Boolean
+    FALSE = "False"
 
     FUNCTION = "fn"  # 关键字
     LET = "let"

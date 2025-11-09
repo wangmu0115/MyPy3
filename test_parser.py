@@ -1,4 +1,3 @@
-from _interpreter.ast import BlockStatement
 from _interpreter.lexer import Lexer
 from _interpreter.parser import Parser
 
@@ -9,9 +8,9 @@ def show_parsed_program(input: str, debug: bool = True):
     #     print(stmt)
     #     print(f"{stmt!r}")
     p = parser.parse(debug)
-    print(BlockStatement(p.statements))
+    # print(BlockStatement(p.statements))
     print(p)
-    print(f"{p!r}")
+    # print(f"{p!r}")
 
 
 if __name__ == "__main__":
@@ -32,7 +31,11 @@ if __name__ == "__main__":
 
     # print(parse_integer_literal(Token(TokenType.INTEGER, "0x12b")))
     input = """
-    let x = fn(){foo; bar; return a + b;};
+    let add = fn(a,){return x + y + z;};
+    add(1,);
+    a + add(b * c) + d;
+    add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
+    add(a + b + c * d / f + g);
 """
     # parser = Parser(Lexer(input))
     # program = parser.parse()
@@ -40,4 +43,4 @@ if __name__ == "__main__":
     # print(BlockStatement())
     # print("\n  ".join([str(stmt) for stmt in program.statements]))
 
-    show_parsed_program(input)
+    show_parsed_program(input, False)

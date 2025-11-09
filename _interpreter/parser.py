@@ -6,6 +6,7 @@ from _interpreter.ast import (
     BinaryOpExpression,
     BlockStatement,
     BoolLiteralExpression,
+    CallExpression,
     Expression,
     ExprStatement,
     FuncExpression,
@@ -39,7 +40,7 @@ class Precedence(IntEnum):  # 语言优先级
     ADDSUB = 4  # +, -
     MULDIV = 5  # *, /
     UNARY = 6  # !, -
-    CALLABLE = 7  # fn(x)
+    CALLABLE = 7  # callable(x)
 
 
 def _token_precedence(tk: Union[Token | TokenType]) -> Precedence:  # 运算符对应的优先级
@@ -55,7 +56,7 @@ def _token_precedence(tk: Union[Token | TokenType]) -> Precedence:  # 运算符�
             return Precedence.MULDIV
         case TokenType.NOT | TokenType.SUB:
             return Precedence.UNARY
-        case TokenType.FUNCTION:
+        case TokenType.LPAREN:  # 调用对象运算符 `callable(*arguments)`
             return Precedence.CALLABLE
         case _:
             return Precedence.DEFAULT
@@ -126,13 +127,19 @@ class Parser:
                 return self.__parse_expr_statement(it)
 
     @parse_trace("Expression")
-    def _parse_expression(self, it: Iterator[Token], precedence: Precedence = Precedence.DEFAULT) -> Type[Expression]:  # 解析表达式
+    def _parse_expression(
+        self, it: Iterator[Token], precedence: Precedence = Precedence.DEFAULT
+    ) -> Type[Expression]:  # 解析表达式
         left_parse_func = self.__nuds_parse_func(self.curr_token)  # 中缀表达式 左侧
         if left_parse_func is None:
             raise TokenParseFuncMissError(f"`{self.curr_token}` expression parsing function does not exist.")
         left_expr = left_parse_func(it)
 
-        while self.peek_token is not None and self.peek_token.type != TokenType.SEMICOLON and precedence < _token_precedence(self.peek_token):
+        while (
+            self.peek_token is not None
+            and self.peek_token.type != TokenType.SEMICOLON
+            and precedence < _token_precedence(self.peek_token)
+        ):
             infix_parse_func = self.__leds_parse_func(self.peek_token)
             if infix_parse_func is None:
                 return left_expr
@@ -219,7 +226,7 @@ class Parser:
         elif self.curr_token.type == TokenType.FALSE:
             return BoolLiteralExpression(False)
         else:
-            raise TokenLiteralError("Boolean literal expression only support `true` and `false`.")
+            raise TokenLiteralError("Boolean literal expression only support `True` and `False`.")
 
     @parse_trace("Unary Operator Expression")
     def __parse_unary_op_expression(self, it: Iterator[Token], *args) -> UnaryOpExpression:  # 解析 `一元运算符表达式`
@@ -239,7 +246,9 @@ class Parser:
         return expr
 
     @parse_trace("Binary Operator Expression")
-    def __parse_binary_op_expression(self, left: Type[Expression], it: Iterator[Token], *args) -> BinaryOpExpression:  # 解析 `二元运算符表达式`
+    def __parse_binary_op_expression(
+        self, left: Type[Expression], it: Iterator[Token], *args
+    ) -> BinaryOpExpression:  # 解析 `二元运算符表达式`
         op_token = self.curr_token
         precedence = _token_precedence(op_token)  # 当前运算符的优先级
         self.__next_token(it)  # 将 curr_token 移动到右侧表达式起始处
@@ -249,7 +258,9 @@ class Parser:
         return BinaryOpExpression(op_token, left, right)
 
     @parse_trace("If Expression")
-    def __parse_if_expression(self, it: Iterator[Token], *args) -> IfExpression:  # if (<条件表达式>) {<结果>} else {<可替代的结果>}
+    def __parse_if_expression(
+        self, it: Iterator[Token], *args
+    ) -> IfExpression:  # if (<条件表达式>) {<结果>} else {<可替代的结果>}
         if self.peek_token is None or self.peek_token.type != TokenType.LPAREN:
             raise TokenError("The `if` keyword must be followed by a conditional expression.")
         self.__next_token(it)
@@ -266,6 +277,7 @@ class Parser:
             return IfExpression(cond_expr, conseq_stmt, self.__parse_block_statement(it))
         return IfExpression(cond_expr, conseq_stmt)
 
+    @parse_trace("Function Expression")
     def __parse_func_expression(self, it: Iterator[Token], *args) -> FuncExpression:  # fn(<参数列表>) {函数体}
         self.__next_token(it)  # 将 curr_token 移动到参数列表处
         params = self.__parse_func_params(it)
@@ -273,21 +285,51 @@ class Parser:
         body = self.__parse_block_statement(it)
         return FuncExpression(params, body)
 
+    @parse_trace("Call Expression")
+    def __parse_call_expression(
+        self, callable: Type[Expression], it: Iterator[Token], *args
+    ) -> CallExpression:  # add(<实参列表>)
+        return CallExpression(callable, self.__parse_call_arguments(it))
+
+    @parse_trace("Function Parameters")
     def __parse_func_params(self, it: Iterator[Token]) -> list[IdenExpression]:  # (<参数列表>)
-        if self.curr_token is None or self.curr_token.type != TokenType.LPAREN:
-            raise TokenError("Function parameters must begin with left parenthesis `(`.")
+        if self.curr_token is None or self.peek_token is None or self.curr_token.type != TokenType.LPAREN:
+            raise TokenError("Function parameters must be enclosed in parentheses.")
         parameters = []  # 参数列表
         self.__next_token(it)
-        while self.curr_token is not None and self.curr_token.type == TokenType.IDENTIFIER:
-            parameters.append(self.__parse_iden_expression())  # 解析 curr_token 为参数
-            self.__next_token(it)  # 移动到下一个 token
-            if self.curr_token is not None and self.curr_token.type == TokenType.COMMA:  # 继续解析下一个参数
-                self.__next_token(it)
+        while self.curr_token is not None and self.curr_token.type != TokenType.RPAREN:
+            if self.curr_token.type != TokenType.IDENTIFIER:
+                raise TokenError("Function parameters can only be identifiers.")
+            parameters.append(self.__parse_iden_expression())
+            self.__next_token(it)  # curr_token 移动到 `,` 或 `)` 处
+            if self.curr_token is None or self.curr_token.type == TokenType.RPAREN:
+                break
+            if self.curr_token.type != TokenType.COMMA:
+                raise TokenError("Function parameters must split by comma.")
+            self.__next_token(it)  # 跳过 `,`
+        if self.curr_token is None or self.curr_token.type != TokenType.RPAREN:
+            raise TokenError("Function parameters must be enclosed in parentheses.")
+        return parameters
+
+    @parse_trace("Callable Arguments")
+    def __parse_call_arguments(self, it: Iterator[Token]) -> list[Expression]:  # (<实参列表>)
+        if self.curr_token is None or self.peek_token is None or self.curr_token.type != TokenType.LPAREN:
+            raise TokenError("Callable arguments must be enclosed in parentheses.")
+        arguments = []  # 实参列表
+        self.__next_token(it)
+        while self.curr_token is not None and self.curr_token.type != TokenType.RPAREN:
+            arguments.append(self._parse_expression(it, Precedence.DEFAULT))
+            self.__next_token(it)  # 移动到 `,` 或 `)` 处
+            if self.curr_token is None or self.curr_token.type == TokenType.RPAREN:
+                break
+            if self.curr_token.type != TokenType.COMMA:
+                raise TokenError("Callable arguments must split by comma.")
+            self.__next_token(it)  # 跳过 `,`
 
         if self.curr_token is None or self.curr_token.type != TokenType.RPAREN:
-            raise TokenError("Function parameters must begin with right parenthesis `)`.")
+            raise TokenError("Callable arguments must be enclosed in parentheses.")
 
-        return parameters
+        return arguments
 
     def __prepare_parse(self) -> Iterator[Token]:
         it = iter(self.__lexer)
@@ -337,5 +379,7 @@ class Parser:
                 | TokenType.NEQ
             ):
                 return self.__parse_binary_op_expression
+            case TokenType.LPAREN:
+                return self.__parse_call_expression
             case _:
                 return None
