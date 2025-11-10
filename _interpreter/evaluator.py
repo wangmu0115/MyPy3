@@ -1,6 +1,6 @@
 import operator
 from functools import singledispatch
-from typing import Type, Union
+from typing import Union
 
 from _interpreter import Token
 from _interpreter.ast import (
@@ -15,7 +15,6 @@ from _interpreter.ast import (
     Node,
     Program,
     ReturnStatement,
-    Statement,
     UnaryOpExpression,
 )
 from _interpreter.datamodel import Boolean, Integer, Null, Object, ObjectType, ReturnObj

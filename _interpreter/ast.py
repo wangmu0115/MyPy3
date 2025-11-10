@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, Iterator, Optional, Type, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 
 from _interpreter import Token
 
