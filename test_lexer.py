@@ -1,15 +1,8 @@
-from _interpreter import Lexer, Token, TokenType
+from _interpreter import Lexer
 
 if __name__ == "__main__":
-    l = Lexer("     =+ab_1*=;>,!=,12;     ")
+    input = """
+    let name = "Remilia Scarlet";
+"""
 
-    for t in l:
-        print(t)
-
-    # tok: Token = l.next_token()
-    # while not tok.is_end():
-    #     print(tok)
-    #     tok = l.next_token()
-    print("-" * 50)
-
-    s = "*="
+    print(list(Lexer(input)))

@@ -4,15 +4,19 @@ from _interpreter import Token, TokenType
 class Lexer:
     def __init__(self, input: str):
         self.input = input
-        self.__tokentypes = {tt.value: tt for tt in TokenType}
+        self.__tokentypes = {t.value: t for t in TokenType}
 
     def __iter__(self):
         position = 0
         while position < len(self.input):
             ch = self.input[position]
             match ch:
-                case " " | "\r" | "\n" | "\t":
-                    pass  # 跳过空白字符
+                case " " | "\r" | "\n" | "\t":  # pass whitespace
+                    ...
+                case '"':  # "<字符序列>"
+                    literal = _read_string(self.input, position)
+                    position += len(literal) + 1
+                    yield Token(TokenType.STRING, literal)
                 case "=" | "!" | "<" | ">" | "+" | "-" | "*" | "/" | "&" | "|":
                     _op = _read_op(self.input, position)
                     position += len(_op) - 1
@@ -32,6 +36,13 @@ class Lexer:
 
                     yield Token(_type, _literal)
             position += 1
+
+
+def _read_string(seq: str, start_position: int) -> str:
+    end_position = start_position + 1
+    while end_position < len(seq) and seq[end_position] != '"':
+        end_position += 1
+    return seq[start_position + 1 : end_position]
 
 
 def _read_op(s: str, position: int) -> str:

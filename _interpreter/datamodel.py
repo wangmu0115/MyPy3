@@ -1,15 +1,23 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any, Callable, Type
+
+from _interpreter.ast import BlockStatement, IdenExpression
+
+if TYPE_CHECKING:
+    from _interpreter.environment import Env
 
 
 class ObjectType(StrEnum):
     INTEGER = "Integer"
     BOOLEAN = "Boolean"
+    STRING = "String"
     NULL = "Null"
 
     RETURN = "ReturnObj"
     FUNCTION = "FunctionObj"
+
+    BUILTINCALL = "BuiltinCallableObj"
 
 
 class Object(ABC):
@@ -57,7 +65,25 @@ class Boolean(Object):
         return ObjectType.BOOLEAN
 
 
+class String(Object):
+    def __init__(self, value: str):
+        if not isinstance(value, str):
+            raise ValueError("String value must be text.")
+        super().__init__(value)
+
+    @property
+    def type(self):
+        return ObjectType.STRING
+
+
 class Null(Object):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self):
         super().__init__(None)
 
@@ -73,3 +99,63 @@ class ReturnObj(Object):
     @property
     def type(self):
         return ObjectType.RETURN
+
+
+class FunctionObj(Object):
+    def __init__(self, parameters: list[IdenExpression], body: BlockStatement, env: "Env"):
+        super().__init__(None)
+        self.__parameters = parameters
+        self.__body = body
+        self.__env = env
+
+    @property
+    def type(self):
+        return ObjectType.FUNCTION
+
+    @property
+    def params(self):
+        return self.parameters
+
+    @property
+    def parameters(self):
+        return self.__parameters
+
+    @property
+    def body(self):
+        return self.__body
+
+    @property
+    def env(self):
+        return self.__env
+
+
+class BuiltinCallable(Object):
+    def __init__(self, callable: Type[Callable]):
+        super().__init__(callable.__name__)
+        self.__callable = callable
+
+    @property
+    def type(self):
+        return ObjectType.BUILTINCALL
+
+    @property
+    def callable(self):
+        return self.__callable
+
+    @property
+    def call(self):
+        return self.callable
+
+
+class DataModelSystem:
+    @classmethod
+    def from_value(cls, value: Any) -> Object:
+        if value is None:
+            return Null()
+        match value:
+            case int():
+                return Integer(value)
+            case bool():
+                return Boolean(value)
+            case _:
+                raise ValueError(f"Unsupported value type: {type(value)}({value})")

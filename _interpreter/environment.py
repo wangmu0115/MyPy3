@@ -1,48 +1,48 @@
-import operator
-from typing import Callable, Optional
+from __future__ import annotations
 
-from _interpreter.datamodel import Object
+import operator
+from typing import Optional
+
+from _interpreter.datamodel import BuiltinCallable, Object
 
 
 class Env:
-    def __init__(self):
-        self.callables = dict()
-        self.store: dict[str, Object] = dict()
+    def __init__(self, builtins: Optional[dict[str, Object]] = None, outer: Optional[Env] = None):
+        self.store: dict[str, Object] = builtins or dict()
+        self.outer = outer
 
-    def register(self, extra_callables: dict[str, Callable]):
-        self.callables.update(extra_callables)
+    def get(self, name: str) -> Object:
+        val = self.store.get(name, None)
+        if val is None and self.outer is not None:
+            return self.outer.get(name)
+        return val
 
-    def get(self, op: str) -> Callable:
-        return self.callables.get(op, None)
-
-    def set_value(self, name: str, value: Object) -> Object:
+    def update(self, name: str, value: Object) -> Object:
         self.store[name] = value
         return value
 
-    def get_value(self, name: str) -> Optional[Object]:
-        return self.store.get(name, None)
-
 
 def standard_env() -> Env:
+    builtin_operators = {
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.floordiv,  # TODO
+        ">": operator.gt,
+        ">=": operator.ge,
+        "<": operator.lt,
+        "<=": operator.le,
+        "==": operator.eq,
+        "!=": operator.ne,
+    }
+
+    builtins = dict()
+    builtins.update({op[0]: BuiltinCallable(op[1]) for op in builtin_operators.items()})
+
+    return Env(builtins)
+
+
+def build_enclosed_env(outer_env: Env):
     env = Env()
-    env.register(
-        {
-            "+": operator.add,
-            "-": operator.sub,
-            "*": operator.mul,
-            "/": operator.floordiv,  # TODO
-            ">": operator.gt,
-            ">=": operator.ge,
-            "<": operator.lt,
-            "<=": operator.le,
-            "==": operator.eq,
-            "!=": operator.ne,
-        }
-    )
+    env.outer = outer_env
     return env
-
-
-if __name__ == "__main__":
-    env = standard_env()
-
-    print(env.callables)

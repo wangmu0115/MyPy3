@@ -30,13 +30,14 @@ if __name__ == "__main__":
     # show_parsed_program("foobar;")
 
     # print(parse_integer_literal(Token(TokenType.INTEGER, "0x12b")))
-    input = """
-    let add = fn(a,){return x + y + z;};
-    add(1,);
-    a + add(b * c) + d;
-    add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
-    add(a + b + c * d / f + g);
-"""
+    #     input = """
+    #     let add = fn(a,){return x + y + z;};
+    #     add(1,);
+    #     a + add(b * c) + d;
+    #     add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
+    #     add(a + b + c * d / f + g);
+    # """
+    input = "let x = 12 32;"
     # parser = Parser(Lexer(input))
     # program = parser.parse()
     # print(BlockStatement(*program.statements))

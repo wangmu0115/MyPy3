@@ -3,11 +3,12 @@ from typing import Optional
 
 
 class TokenType(StrEnum):
-    ILLEGAL = "illegal"  # 未知不合法的词法单元
+    ILLEGAL = "illegal"  # unsupported token
     EOF = "EOF"  # End Of File
 
     IDENTIFIER = "identifier"  # 标识符
-    INTEGER = "int"  # 整数字面量
+    INTEGER = "integer"
+    STRING = "string"
 
     ASSIGN = "="  # 运算符
     ADD = "+"
@@ -33,7 +34,7 @@ class TokenType(StrEnum):
     NEQ = "!="
 
     COMMA = ","
-    SEMICOLON = ";"  # 语句结束 token
+    SEMICOLON = ";"
 
     LPAREN = "("
     RPAREN = ")"
@@ -43,16 +44,14 @@ class TokenType(StrEnum):
     TRUE = "True"  # Boolean
     FALSE = "False"
 
-    FUNCTION = "fn"  # 关键字
     LET = "let"
     RETURN = "return"
+    FUNCTION = "fn"
     IF = "if"
     ELSE = "else"
 
 
 class Token:
-    """词法单元"""
-
     def __init__(self, type: TokenType, literal: Optional[str] = None):
         self.__type = type
         self.__literal = literal or type.value
@@ -66,10 +65,7 @@ class Token:
         return self.__literal
 
     def __repr__(self):
-        return f"Token(type={self.type!r}, literal={self.literal!r})"
+        return f"Token(type={self.type.name}, literal='{self.literal}')"
 
     def __str__(self):
-        if self.type.value == self.literal:
-            return self.literal
-        else:
-            return f"{self.type}::{self.literal}"
+        return f"{self.type.name}('{self.literal}')"

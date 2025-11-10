@@ -55,7 +55,7 @@ class IdenExpression(Expression):
         return self.iden
 
 
-LiteralType = TypeVar("T")
+LiteralType = TypeVar("LiteralType", int, bool, str)
 
 
 class LiteralExpression(Expression, Generic[LiteralType]):
@@ -67,16 +67,19 @@ class LiteralExpression(Expression, Generic[LiteralType]):
         return self.__literal
 
     def __repr__(self):
-        return f"LiteralExpression(literal={self.literal!r}, type={type(self.literal)})"
+        return f"{self.__class__.__name__}(literal={self.literal!r})"
 
     def __str__(self):
-        return str(self.literal)
+        return f"{self.literal.__class__.__name__}({self.literal})"
 
 
 class BoolLiteralExpression(LiteralExpression[bool]): ...
 
 
 class IntLiteralExpression(LiteralExpression[int]): ...
+
+
+class StrLiteralExpression(LiteralExpression[str]): ...
 
 
 class UnaryOpExpression(Expression):

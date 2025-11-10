@@ -1,3 +1,4 @@
+from _interpreter.environment import standard_env
 from _interpreter.evaluator import evaluate
 from _interpreter.lexer import Lexer
 from _interpreter.parser import Parser
@@ -60,19 +61,31 @@ if __name__ == "__main__":
     #     x + y;
     # """
     # input = "if (10 > 1) { if (10 > 1) { return 10; }; return 1; };"
+    #     input = """
+    #     let a = 5;
+    #     let b = a > 3;
+    #     let c = a * 99;
+    #     if (b) { 10; } else { 1; };
+    #     let d = if (c > a) { 99; } else { 100; };
+    #     d * c * a;
+    # """
+    # input = """
+    # let add = fn(a, b, c, d) { return a + b + c + d; };
+    # add(1, 2, 3, 4);
+    # let multiply = fn(x, y) { x * y;};
+    # multiply(50 / 2, 1 * 2);
+    # fn(x) { x == 10; }(5);
+    # """
     input = """
-    let a = 5;
-    let b = a > 3;
-    let c = a * 99;
-    if (b) { 10; } else { 1; };
-    let d = if (c > a) { 99; } else { 100; };
-    d * c * a;
-"""
-
+    let newAdder = fn(x) {fn(y) { x + y ;};};
+    let addTwo = newAdder(2);
+    addTwo(3);
+    """
+    env = standard_env()
     program = Parser(Lexer(input)).parse(False)
-    # print(f"{program!r}")
+    print(f"{program!r}")
     # print("-" * 80)
-    print(evaluate(program))
+    print(evaluate(program, env))
     print("-" * 80)
     for stmt in program.statements:
         print(evaluate(stmt))

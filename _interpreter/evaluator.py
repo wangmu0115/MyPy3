@@ -7,7 +7,9 @@ from _interpreter.ast import (
     BinaryOpExpression,
     BlockStatement,
     BoolLiteralExpression,
+    CallExpression,
     ExprStatement,
+    FuncExpression,
     IdenExpression,
     IfExpression,
     IntLiteralExpression,
@@ -17,10 +19,26 @@ from _interpreter.ast import (
     ReturnStatement,
     UnaryOpExpression,
 )
-from _interpreter.datamodel import Boolean, Integer, Null, Object, ObjectType, ReturnObj
+from _interpreter.datamodel import Boolean, BuiltinCallable, DataModelSystem, FunctionObj, Integer, Null, Object, ObjectType, ReturnObj
 from _interpreter.environment import Env, standard_env
 from _interpreter.parser import TokenError, TokenLiteralError, TokenTypeError
 from _interpreter.tokens import TokenType
+
+
+class UnsupportedOperatorException(Exception): ...
+
+
+class UndefinedIdenException(Exception): ...
+
+
+class UndefinedCallException(Exception): ...
+
+
+class CallArgumentsException(Exception): ...
+
+
+class EvalException(Exception): ...
+
 
 _Null = Null()
 
@@ -46,8 +64,8 @@ def _(program: Program, env: Env = _STANDARD_ENV) -> Object:
 def _(node: Node, env: Env = _STANDARD_ENV) -> Object:
     match node:
         case LetStatement():
-            value = evaluate(node.value)
-            env.set_value(node.iden, value.value if value.type == ObjectType.RETURN else value)
+            value = evaluate(node.value, env)
+            env.update(node.iden, __unwrap_return_obj(value))
             return _Null
         case BlockStatement():
             return _eval_block_statement(node, env)
@@ -57,10 +75,10 @@ def _(node: Node, env: Env = _STANDARD_ENV) -> Object:
             return ReturnObj(evaluate(node.value, env))
 
         case IdenExpression():
-            val = env.get_value(node.iden)
-            if val is None:
-                raise TokenLiteralError()
-            return val
+            value = env.get(node.iden)
+            if value is None:
+                raise UndefinedIdenException(f"Undefined identifier: {node.iden}")
+            return value
         case IntLiteralExpression():
             return Integer(node.literal)
         case BoolLiteralExpression():
@@ -80,6 +98,12 @@ def _(node: Node, env: Env = _STANDARD_ENV) -> Object:
                 return evaluate(node.alternative, env)
             else:
                 return _Null
+        case FuncExpression():
+            return FunctionObj(node.params, node.body, env)
+        case CallExpression():
+            callable = evaluate(node.callable, env)
+            arguments = [evaluate(arg, env) for arg in node.args]  # 实参列表
+            return _apply_callable(callable, arguments)
         case _:
             return _Null
 
@@ -107,15 +131,36 @@ def _evaluate_unaryop_expr(op: Token, right: Object) -> Object:
 
 
 def _evaluate_binaryop_expr(op: Token, left: Object, right: Object, env: Env) -> Object:
-    op_func = env.get(op.literal)
-    if op_func is None:
-        raise TokenError()
-    match op.type:
-        case TokenType.ADD | TokenType.SUB | TokenType.MUL | TokenType.DIV:
-            value_type = Integer
-        case TokenType.EQ | TokenType.NEQ | TokenType.LT | TokenType.LE | TokenType.GT | TokenType.GE:
-            value_type = Boolean
-        case _:
-            value_type = None
+    op_callable = env.get(op.literal)
+    if op_callable is None or op_callable.type != ObjectType.BUILTINCALL:
+        raise UnsupportedOperatorException(f"Unsupported operator: {op.literal}")
+    return _apply_callable(op_callable, [left, right])
 
-    return value_type(op_func(left.value, right.value))
+
+def _apply_callable(callable: Object, arguments: list[Object]) -> Object:
+    match callable.type:
+        case ObjectType.FUNCTION:
+            extended_env = __extend_func_env(callable, arguments)
+            res = evaluate(callable.body, extended_env)
+            return __unwrap_return_obj(res)
+        case ObjectType.BUILTINCALL:
+            call = callable.call
+            return DataModelSystem.from_value(call(*(__unwrap_return_obj(arg).value for arg in arguments)))
+        case _:
+            raise UndefinedCallException(f"Undefined callable: {callable.value}")
+
+
+def __extend_func_env(callable: FunctionObj, arguments: list[Object]) -> Env:
+    if len(arguments) != len(callable.parameters):
+        raise CallArgumentsException(f"Expected {len(callable.parameters)} arguments, got {len(arguments)}")
+    env = Env(outer=callable.env)
+    for param_index, param in enumerate(callable.parameters):
+        env.update(param.iden, arguments[param_index])
+    return env
+
+
+def __unwrap_return_obj(obj: Object) -> Object:
+    if obj.type == ObjectType.RETURN:
+        return obj.value
+    else:
+        return obj
