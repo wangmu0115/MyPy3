@@ -127,19 +127,13 @@ class Parser:
                 return self.__parse_expr_statement(it)
 
     @parse_trace("Expression")
-    def _parse_expression(
-        self, it: Iterator[Token], precedence: Precedence = Precedence.DEFAULT
-    ) -> Type[Expression]:  # 解析表达式
+    def _parse_expression(self, it: Iterator[Token], precedence: Precedence = Precedence.DEFAULT) -> Type[Expression]:  # 解析表达式
         left_parse_func = self.__nuds_parse_func(self.curr_token)  # 中缀表达式 左侧
         if left_parse_func is None:
             raise TokenParseFuncMissError(f"`{self.curr_token}` expression parsing function does not exist.")
         left_expr = left_parse_func(it)
 
-        while (
-            self.peek_token is not None
-            and self.peek_token.type != TokenType.SEMICOLON
-            and precedence < _token_precedence(self.peek_token)
-        ):
+        while self.peek_token is not None and self.peek_token.type != TokenType.SEMICOLON and precedence < _token_precedence(self.peek_token):
             infix_parse_func = self.__leds_parse_func(self.peek_token)
             if infix_parse_func is None:
                 return left_expr
@@ -200,7 +194,7 @@ class Parser:
             if stmt is not None:
                 statements.append(stmt)
             self.__next_token(it)  # 将 curr_token 指向下一条语句的开头
-        return BlockStatement(*statements)
+        return BlockStatement(statements)
 
     @parse_trace("Identifier Expression")
     def __parse_iden_expression(self, *args) -> IdenExpression:  # 解析 `标识符表达式`
@@ -246,9 +240,7 @@ class Parser:
         return expr
 
     @parse_trace("Binary Operator Expression")
-    def __parse_binary_op_expression(
-        self, left: Type[Expression], it: Iterator[Token], *args
-    ) -> BinaryOpExpression:  # 解析 `二元运算符表达式`
+    def __parse_binary_op_expression(self, left: Type[Expression], it: Iterator[Token], *args) -> BinaryOpExpression:  # 解析 `二元运算符表达式`
         op_token = self.curr_token
         precedence = _token_precedence(op_token)  # 当前运算符的优先级
         self.__next_token(it)  # 将 curr_token 移动到右侧表达式起始处
@@ -258,9 +250,7 @@ class Parser:
         return BinaryOpExpression(op_token, left, right)
 
     @parse_trace("If Expression")
-    def __parse_if_expression(
-        self, it: Iterator[Token], *args
-    ) -> IfExpression:  # if (<条件表达式>) {<结果>} else {<可替代的结果>}
+    def __parse_if_expression(self, it: Iterator[Token], *args) -> IfExpression:  # if (<条件表达式>) {<结果>} else {<可替代的结果>}
         if self.peek_token is None or self.peek_token.type != TokenType.LPAREN:
             raise TokenError("The `if` keyword must be followed by a conditional expression.")
         self.__next_token(it)
@@ -286,9 +276,7 @@ class Parser:
         return FuncExpression(params, body)
 
     @parse_trace("Call Expression")
-    def __parse_call_expression(
-        self, callable: Type[Expression], it: Iterator[Token], *args
-    ) -> CallExpression:  # add(<实参列表>)
+    def __parse_call_expression(self, callable: Type[Expression], it: Iterator[Token], *args) -> CallExpression:  # add(<实参列表>)
         return CallExpression(callable, self.__parse_call_arguments(it))
 
     @parse_trace("Function Parameters")

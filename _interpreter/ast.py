@@ -18,10 +18,18 @@ class Program:
     """程序由一系列的语句构成"""
 
     def __init__(self, statements: Optional[list[Type[Statement]]] = None):
-        self.statements = statements or []
+        self.__statements = statements or []
 
     def append(self, statement: Type[Statement]):
-        self.statements.append(statement)
+        self.__statements.append(statement)
+
+    @property
+    def stmts(self):
+        return self.statements
+
+    @property
+    def statements(self):
+        return self.__statements
 
     def __repr__(self):
         return "\n".join(repr(stmt) for stmt in self.statements)
@@ -121,9 +129,7 @@ class BinaryOpExpression(Expression):
 
 
 class IfExpression(Expression):
-    def __init__(
-        self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement] = None
-    ):
+    def __init__(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement] = None):
         self.__condition = condition
         self.__consequence = consequence
         self.__alternative = alternative
@@ -264,11 +270,19 @@ class ExprStatement(Statement):
 class BlockStatement(Statement):
     """块语句: {...}"""
 
-    def __init__(self, *statements: Iterator[Type[Statement]]):
-        self.__statements = list(statements)
+    def __init__(self, statements: list[Type[Statement]] = None):
+        self.__statements = statements or []
 
     def append(self, statement: Type[Statement]):
         self.__statements.append(statement)
+
+    @property
+    def stmts(self):
+        return self.statements
+
+    @property
+    def statements(self):
+        return self.__statements
 
     def __len__(self):
         return len(self.__statements)

@@ -8,6 +8,9 @@ class ObjectType(StrEnum):
     BOOLEAN = "Boolean"
     NULL = "Null"
 
+    RETURN = "ReturnObj"
+    FUNCTION = "FunctionObj"
+
 
 class Object(ABC):
     def __init__(self, value: Any):
@@ -61,3 +64,12 @@ class Null(Object):
     @property
     def type(self):
         return ObjectType.NULL
+
+
+class ReturnObj(Object):
+    def __init__(self, obj: Object):
+        super().__init__(obj)
+
+    @property
+    def type(self):
+        return ObjectType.RETURN
