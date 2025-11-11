@@ -1,10 +1,14 @@
-from _interpreter import Token, TokenType
+import string
+
+from _interpreter import BUILTIN_KEYWORDS, BUILTIN_OPERATORS, Token, TokenType
+
+
+class LexerError(Exception): ...
 
 
 class Lexer:
     def __init__(self, input: str):
         self.input = input
-        self.__tokentypes = {t.value: t for t in TokenType}
 
     def __iter__(self):
         position = 0
@@ -13,76 +17,116 @@ class Lexer:
             match ch:
                 case " " | "\r" | "\n" | "\t":  # pass whitespace
                     ...
-                case '"':  # "<字符序列>"
+                case '"':
                     literal = _read_string(self.input, position)
                     position += len(literal) + 1
                     yield Token(TokenType.STRING, literal)
                 case "=" | "!" | "<" | ">" | "+" | "-" | "*" | "/" | "&" | "|":
-                    _op = _read_op(self.input, position)
-                    position += len(_op) - 1
-                    yield Token(self.__tokentypes[_op])
+                    operator = _read_operator(self.input, position)
+                    position += len(operator) - 1
+                    yield Token(BUILTIN_OPERATORS[operator])
                 case "," | ";" | "(" | ")" | "{" | "}":
-                    yield Token(self.__tokentypes[ch])
+                    yield Token(BUILTIN_OPERATORS[ch])
                 case _:
-                    _literal, _type = ch, TokenType.ILLEGAL  # 默认非法字符
-                    if _is_letter(ch):  # 提取标识符
-                        _literal = _read_identifier(self.input, position)
-                        _type = self.__tokentypes.get(_literal, TokenType.IDENTIFIER)  # 标识符或者关键字
-                        position += len(_literal) - 1
-                    elif _is_digit(ch):
-                        _literal = _read_number(self.input, position)
-                        _type = TokenType.INTEGER
-                        position += len(_literal) - 1
+                    if _is_letter(ch):  # identifier
+                        iden = _read_iden(self.input, position)
+                        position += len(iden) - 1
+                        yield Token(BUILTIN_KEYWORDS.get(iden, TokenType.IDENTIFIER), iden)
+                    elif _is_digit(ch):  # numbers
+                        number = _read_number(self.input, position)
+                        position += len(number) - 1
+                        yield Token(TokenType.NUMBER, number)
+                    else:
+                        raise LexerError(f"Unknown illegal characters: {ch}")
 
-                    yield Token(_type, _literal)
             position += 1
+        yield Token(TokenType.EOF)
 
 
-def _read_string(seq: str, start_position: int) -> str:
+def _read_string(seq: str, start_position: int) -> str:  # "<字符序列>"
     end_position = start_position + 1
     while end_position < len(seq) and seq[end_position] != '"':
         end_position += 1
+    if end_position == len(seq):
+        raise LexerError("The string must be enclosed in double quotes.")
     return seq[start_position + 1 : end_position]
 
 
-def _read_op(s: str, position: int) -> str:
-    """提取运算符, s[position]是运算符, 进一步判断是否是就地赋值运算符"""
-    if position >= len(s) - 1:
-        return s[position]
-    match s[position + 1]:
-        case "=":
-            return s[position : position + 2]
-        case _:
-            return s[position]
+def _read_operator(seq: str, position: int) -> str:  # 运算符: >, >=, ...
+    if position >= len(seq) - 1:
+        return seq[position]
+    if seq[position + 1] == "=":
+        return seq[position : position + 2]
+    else:
+        return seq[position]
 
 
-def _read_identifier(s: str, start_position: int) -> str:
+def _read_iden(seq: str, start_position: int) -> str:  # 标识符: _abc, abc, abc_1, abc123, ...
     end_position = start_position + 1
-    while end_position < len(s):
-        ch = s[end_position]
+    while end_position < len(seq):
+        ch = seq[end_position]
         if _is_letter(ch) or _is_digit(ch):
             end_position += 1
         else:
             break
-    return s[start_position:end_position]
+    return seq[start_position:end_position]
 
 
-def _read_number(s: str, start_position: int) -> str:
-    end_position = start_position + 1
-    while end_position < len(s):
-        ch = s[end_position]
-        if _is_digit(ch):
+def _read_number(seq: str, start_position: int) -> str:
+    hex = __is_hex(seq, start_position)  # 十六进制
+    if hex:
+        end_position = start_position + 2
+        while end_position < len(seq) and seq[end_position] in "0123456789abcdefABCDEF":
             end_position += 1
-        else:
-            break
-    return s[start_position:end_position]
+        return seq[start_position:end_position]
+    else:
+        cnt_point = 0  # 小数点 <= 1
+        cnt_e = 0  # 1e-8, 1e6
+        end_position = start_position + 1
+        while end_position < len(seq):
+            ch = seq[end_position]
+            match ch:
+                case "." | "e" | "E":
+                    cnt_point, cnt_e = __check_float(ch, cnt_point, cnt_e)
+                    end_position += 1
+                case "-" | "+":
+                    if seq[end_position - 1] == "e" or seq[end_position - 1] == "E":
+                        end_position += 1
+                    else:
+                        break
+                case _:
+                    if _is_digit(ch):
+                        end_position += 1
+                    else:
+                        break
+        return seq[start_position:end_position]
 
 
 def _is_letter(ch: str) -> bool:
-    # ord("a") = 97, ord("z") = 122, ord("A") = 65, ord("Z") = 90, ord("_") = 95
-    ordinal = ord(ch)
-    return (ordinal >= 65 and ordinal <= 90) or (ordinal >= 97 and ordinal <= 122) or ordinal == 95
+    return ch == "_" or ch in string.ascii_letters
 
 
 def _is_digit(ch: str) -> bool:
     return ch in list("0123456789")
+
+
+def __is_hex(seq: str, position: int):
+    if position >= len(seq) - 1:
+        return False
+    elif seq[position] != "0":
+        return False
+    else:
+        return seq[position + 1] == "x" or seq[position + 1] == "X"
+
+
+def __check_float(ch: str, cnt_point, cnt_e) -> tuple[int, int]:
+    if ch == ".":
+        if cnt_point >= 1:
+            raise LexerError("The decimal point(`.`) can only appear once.")
+        return 1, cnt_e
+    elif ch == "e" or ch == "E":
+        if cnt_e >= 1:
+            raise LexerError("The decimal point(`e`) can only appear once.")
+        return cnt_point, 1
+    else:
+        return cnt_point, cnt_e

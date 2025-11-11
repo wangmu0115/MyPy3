@@ -37,11 +37,11 @@ if __name__ == "__main__":
     #     add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
     #     add(a + b + c * d / f + g);
     # """
-    input = "let x = 12 32;"
+    input = "3 * 5 + 2;"
     # parser = Parser(Lexer(input))
     # program = parser.parse()
     # print(BlockStatement(*program.statements))
     # print(BlockStatement())
     # print("\n  ".join([str(stmt) for stmt in program.statements]))
 
-    show_parsed_program(input, False)
+    show_parsed_program(input, True)

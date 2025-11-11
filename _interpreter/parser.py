@@ -95,7 +95,7 @@ class Parser:
     """语法解析器"""
 
     def __init__(self, lexer: Lexer):
-        self.__lexer = lexer
+        self.lexer = lexer
         self.curr_token = None
         self.peek_token = None
         self.trace = Trace()
@@ -112,11 +112,13 @@ class Parser:
             stmt = self._parse_statement(it)
             if stmt is not None:
                 program.append(stmt)
-            self.__next_token(it)  # 将 curr_token 指向下一条语句的开头
+            self.__next_token(it)  # 移动 curr_token 到下一条语句的开头处
         return program
 
-    def _parse_statement(self, it: Iterator[Token]) -> Type[Statement]:  # 解析语句
+    def _parse_statement(self, it: Iterator[Token]) -> Type[Statement]:
         match self.curr_token.type:
+            case TokenType.SEMICOLON:  # empty statement `;`
+                return None
             case TokenType.LET:
                 return self.__parse_let_statement(it)
             case TokenType.RETURN:
@@ -127,19 +129,20 @@ class Parser:
                 return self.__parse_expr_statement(it)
 
     @parse_trace("Expression")
-    def _parse_expression(self, it: Iterator[Token], precedence: Precedence = Precedence.DEFAULT) -> Type[Expression]:  # 解析表达式
-        left_parse_func = self.__nuds_parse_func(self.curr_token)  # 中缀表达式 左侧
-        if left_parse_func is None:
-            raise TokenParseFuncMissError(f"`{self.curr_token}` expression parsing function does not exist.")
-        left_expr = left_parse_func(it)
+    def _parse_expression(self, it: Iterator[Token], precedence: Precedence = Precedence.DEFAULT) -> Type[Expression]:
+        print(self.curr_token, self.peek_token, precedence.name)
+        parse_func = self.__nuds_parse_func(self.curr_token)  # 解析 curr_token: 字面量, 一元运算符
+        if parse_func is None:
+            raise TokenParseFuncMissError(f"Token `{self.curr_token}` parsing function does not exist.")
+        expr = parse_func(it)  # 将 curr_token 解析为表达式
 
         while self.peek_token is not None and self.peek_token.type != TokenType.SEMICOLON and precedence < _token_precedence(self.peek_token):
-            infix_parse_func = self.__leds_parse_func(self.peek_token)
+            infix_parse_func = self.__leds_parse_func(self.peek_token)  # 中缀表达式
             if infix_parse_func is None:
-                return left_expr
-            self.__next_token(it)  # 将 curr_token 移动到二元运算符处
-            left_expr = infix_parse_func(left_expr, it)
-        return left_expr
+                return expr
+            self.__next_token(it)  # 移动 curr_token 到中缀表达式的运算符处
+            expr = infix_parse_func(expr, it)
+        return expr
 
     @parse_trace("Let-Statement")
     def __parse_let_statement(self, it: Iterator[Token]) -> LetStatement:  # let <标识符> = <表达式>;
@@ -320,7 +323,7 @@ class Parser:
         return arguments
 
     def __prepare_parse(self) -> Iterator[Token]:
-        it = iter(self.__lexer)
+        it = iter(self.lexer)
         self.curr_token = next(it, None)
         self.peek_token = next(it, None)
         return it

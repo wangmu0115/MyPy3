@@ -1,14 +1,15 @@
 from enum import StrEnum
+from string import ascii_letters
 from typing import Optional
 
 
 class TokenType(StrEnum):
-    ILLEGAL = "illegal"  # unsupported token
-    EOF = "EOF"  # End Of File
+    ILLEGAL = "____ILLEGAL____"  # unsupported token
+    EOF = "____EOF____"  # End Of File
 
-    IDENTIFIER = "identifier"  # 标识符
-    INTEGER = "integer"
-    STRING = "string"
+    IDENTIFIER = "____IDEN____"  # 标识符
+    NUMBER = "____NUMBER____"
+    STRING = "____STRING____"
 
     ASSIGN = "="  # 运算符
     ADD = "+"
@@ -69,3 +70,7 @@ class Token:
 
     def __str__(self):
         return f"{self.type.name}('{self.literal}')"
+
+
+BUILTIN_KEYWORDS = {tt.value: tt for tt in TokenType if tt.value[0] in ascii_letters}
+BUILTIN_OPERATORS = {tt.value: tt for tt in TokenType if tt.value[0] not in ascii_letters and not tt.value.startswith("____")}
