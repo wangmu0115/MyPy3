@@ -17,5 +17,5 @@ let integer = "hello world";"""
     input = '"$$#";'
     print_lexer_tokens(input)
 
-    input = "0.123;0x12B;1e-6;1e+7 12;0.1E12;1e0.3;0x;1-6;1+6"
+    input = "0.123;0x12B;1e-6;1e+7 12;0.1E12;1e0.3;0x;1-6;1+6; 0.123e1e2"
     print_lexer_tokens(input)

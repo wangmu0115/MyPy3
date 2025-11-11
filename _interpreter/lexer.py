@@ -72,7 +72,7 @@ def _read_iden(seq: str, start_position: int) -> str:  # 标识符: _abc, abc, a
     return seq[start_position:end_position]
 
 
-def _read_number(seq: str, start_position: int) -> str:
+def _read_number(seq: str, start_position: int) -> str:  # 整数: 42, 0x12AB ；浮点数: 0.1, 1e+7, 1e-7, 2.3e7
     hex = __is_hex(seq, start_position)  # 十六进制
     if hex:
         end_position = start_position + 2

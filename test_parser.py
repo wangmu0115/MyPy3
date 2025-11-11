@@ -9,7 +9,7 @@ def show_parsed_program(input: str, debug: bool = True):
     #     print(f"{stmt!r}")
     p = parser.parse(debug)
     # print(BlockStatement(p.statements))
-    print(p)
+    print(f"{p!s}")
     # print(f"{p!r}")
 
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     #     add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
     #     add(a + b + c * d / f + g);
     # """
-    input = "3 * 5 + 2;"
+    input = "let x = 12 + 22; let y = 23; x += y;"
     # parser = Parser(Lexer(input))
     # program = parser.parse()
     # print(BlockStatement(*program.statements))
