@@ -6,10 +6,12 @@ DT_DEFAULT_FORMATS = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y%m%d_%H%M%S", "%
 
 
 class DatetimeParser:
-    """A parser uesd to parse datetime string or timestamp into `datetime`.
+    """A parser uesd to parse datetime string or timestamp to `datetime`.
+    Supported datetime formats are defined by `formats` attribute.
+    The attributes `tz_hours` and `tz_minutes` determine the timezone of the converted datetime.
 
     Attributes:
-        formats: datetime string format
+        formats: supported datetime formats
         tz_hours: timezone delta hours
         tz_minutes: timezone delta minutes
     """
@@ -20,10 +22,11 @@ class DatetimeParser:
         self.max_seconds = int(datetime(9999, 12, 31, 23, 59, 59, 999999, tzinfo=self.tzinfo).timestamp())
 
     @singledispatchmethod
-    def parse(self, dt: str | int | float) -> datetime:
-        """Parse datetime string or timestamp into `datetime`.
+    def parse(self, dt: str | int | float, *args) -> datetime | None:
+        """Parse datetime string or timestamp to `datetime`.
         If dt is `str`, parse by formats.
         If dt is `int` or `float`, parse by timestamp.
+        Otherwise, return `None`.
 
         Raises:
             ValueError: If format mismatch or timestamp out of range.
@@ -38,19 +41,16 @@ class DatetimeParser:
             except ValueError:
                 ...  # mismatch format
         if dt is None:
-            raise ValueError(f"Incorrect datetime format: {dt_string}, expected formats: {self.formats}")
+            raise ValueError(f"Unsupported datetime format: {dt_string}, expected formats: {self.formats}")
         return dt.replace(tzinfo=self.tzinfo) if replace_tz else dt
 
     @parse.register
     def _(self, timestamp: int | float, overflow_as_ms: bool = True) -> datetime:
-        """
-        9999-12-31 23:59:59.999999+00:00 timestamp is 253402300800
-        9999-12-31 23:59:59.999999+08:00 timestamp is 253402272000
-        """
+        # 9999-12-31 23:59:59.999999+00:00 timestamp is 253402300800
         if timestamp >= self.max_seconds:  # as millisecond
             if overflow_as_ms:
                 return datetime.fromtimestamp(timestamp / 1000, tz=self.tzinfo)
             else:
-                raise ValueError(f"timestamp({timestamp}) out of range, seconds must less than {self.max_seconds}.")
+                raise ValueError(f"Timestamp({timestamp}) out of range, seconds must less than {self.max_seconds}.")
         else:
             return datetime.fromtimestamp(timestamp, tz=self.tzinfo)
