@@ -9,8 +9,8 @@ def spin(msg: str, done: Event) -> None:
         msg:
         done: threading.Event，用于同步线程的简单对象
     """
-    for ch in itertools.cycle("\|/-"):
-        status = f"\r{ch} {msg}"  # 文本实现动画的技巧，通过回车符`\r`将光标移动到行头
+    for ch in itertools.cycle(r"\|/-"):
+        status = f"\r{ch} {msg}"  # 文本实现动画的技巧: 通过回车符`\r`将光标移动到行头
         print(status, end="", flush=True)
         if done.wait(0.1):  # 暂停等待0.1秒，动画帧率设置为 10 fps
             break
