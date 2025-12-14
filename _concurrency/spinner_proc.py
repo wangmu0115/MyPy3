@@ -1,6 +1,19 @@
 import itertools
+import math
 import time
 from multiprocessing import Event, Process, synchronize
+
+
+def is_prime(num: int) -> bool:
+    if num < 2:
+        return False
+    elif num == 2:
+        return True
+    else:
+        for i in range(2, math.isqrt(num) + 1):
+            if num % i == 0:
+                return False
+        return True
 
 
 def spin(msg: str, done: synchronize.Event) -> None:
@@ -14,7 +27,8 @@ def spin(msg: str, done: synchronize.Event) -> None:
 
 
 def slow():
-    time.sleep(3)
+    is_prime(5_000_111_000_222_021)
+    # time.sleep(3)
     return 42
 
 

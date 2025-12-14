@@ -1,6 +1,19 @@
 import itertools
+import math
 import time
 from threading import Event, Thread
+
+
+def is_prime(num: int) -> bool:
+    if num < 2:
+        return False
+    elif num == 2:
+        return True
+    else:
+        for i in range(2, math.isqrt(num) + 1):
+            if num % i == 0:
+                return False
+        return True
 
 
 def spin(msg: str, done: Event) -> None:
@@ -19,7 +32,8 @@ def spin(msg: str, done: Event) -> None:
 
 
 def slow() -> int:
-    time.sleep(3)  # 调用 time.sleep() 阻塞所在的线程，但是释放 GIL，其他 Python 线程可以继续运行。
+    is_prime(5_000_111_000_222_021)
+    # time.sleep(3)  # 调用 time.sleep() 阻塞所在的线程，但是释放 GIL，其他 Python 线程可以继续运行。
     return 42
 
 
