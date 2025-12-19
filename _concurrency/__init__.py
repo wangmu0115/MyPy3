@@ -3,11 +3,19 @@ from typing import TYPE_CHECKING
 from _import_utils import import_attr
 
 if TYPE_CHECKING:
-    pass
+    from flags_base import download_flags, get_flag, save_flag
 
-__all__ = []
+__all__ = [
+    "get_flag",
+    "save_flag",
+    "download_flags",
+]
 
-_dynamic_imports = {}
+_dynamic_imports = {
+    "get_flag": "flags_base",
+    "save_flag": "flags_base",
+    "download_flags": "flags_base",
+}
 
 
 def __getattr__(attr_name: str) -> object:
