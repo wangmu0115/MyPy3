@@ -7,8 +7,16 @@ class Vector2d:
     typecode = "d"
 
     def __init__(self, x, y):
-        self.x = float(x)
-        self.y = float(y)
+        self.__x = float(x)
+        self.__y = float(y)
+
+    @property
+    def x(self):
+        return self.__x
+
+    @property
+    def y(self):
+        return self.__y
 
     @classmethod
     def frombytes(cls, octets):
@@ -29,6 +37,9 @@ class Vector2d:
 
     def __bytes__(self):
         return bytes([ord(self.typecode)]) + bytes(array(self.typecode, self))
+
+    def __hash__(self):
+        return hash(tuple(self))
 
     def __eq__(self, other):
         # It will also return True when comparing `Vector2d` instances
@@ -56,3 +67,4 @@ if __name__ == "__main__":
     print(">>>", f"{octets!r}")
     print(">>>", abs(v1))
     print(">>>", bool(v1), bool(Vector2d(0, 0)))
+    print(">>>", hash(v1), hash(Vector2d(3.1, 4.2)))
